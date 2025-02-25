@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kitchen Orders</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table, th, td {
+      border: 1px solid black;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>Kitchen Orders</h1>
+  <div id="orders"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    // Listen for real-time updates (order status changes)
+    socket.on('order_status_updated', (data) => {
+      alert(`Order ${data.orderId} status updated to ${data.newStatus}`);
+      // You can refresh the page or update the status on the page dynamically
+    });
+
+    // Function to update the order status
+    function updateStatus(orderId) {
+      const newStatus = document.getElementById(`status-${orderId}`).value;
+
+      fetch('/update-order-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, newStatus })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert(data.message);
+        } else {
+          alert('Failed to update status');
+        }
+      })
+      .catch(err => {
+        alert('Error updating order status');
+        console.error(err);
+      });
+    }
+
+    // Fetch and display orders when the page loads
+    window.onload = function() {
+      fetch('/kitchen')
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('orders').innerHTML = data;
+        })
+        .catch(err => {
+          console.error('Error loading orders:', err);
+        });
+    };
+  </script>
+</body>
+</html>

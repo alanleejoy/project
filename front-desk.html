@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Front Desk - Pending Orders</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table, th, td {
+      border: 1px solid black;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>Front Desk - Pending Orders</h1>
+  <div id="orderDetails"></div>
+
+  <script>
+    // Fetch all pending orders from the server
+    fetch('/front-desk')
+      .then(response => response.json())
+      .then(orders => {
+        const orderDetails = document.getElementById('orderDetails');
+        let orderHTML = `<h2>Pending Orders</h2><table><tr><th>Order ID</th><th>Table Number</th><th>Items</th><th>Total Price</th><th>Actions</th></tr>`;
+
+        // Loop through each order and display it
+        orders.forEach(order => {
+          let itemsList = '';
+          order.items.forEach(item => {
+            itemsList += `<div>${item.name} (x${item.quantity}) - $${item.total.toFixed(2)}</div>`;
+          });
+
+          orderHTML += `
+            <tr>
+              <td>${order.orderId}</td>
+              <td>${order.tableNumber}</td>
+              <td>${itemsList}</td>
+              <td>$${order.totalPrice.toFixed(2)}</td>
+              <td><button onclick="markAsPaid(${order.orderId})">Mark as Paid</button></td>
+            </tr>
+          `;
+        });
+
+        orderHTML += `</table>`;
+        orderDetails.innerHTML = orderHTML;
+      })
+      .catch(err => console.error('Error fetching pending orders:', err));
+
+    // Mark the order as paid
+    function markAsPaid(orderId) {
+      if (confirm(`Are you sure you want to mark order ${orderId} as paid?`)) {
+        // Send request to update order status
+        fetch('/update-order-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: orderId,
+            newStatus: 'paid'
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Order marked as paid!');
+            location.reload();  // Reload the page to refresh the pending orders
+          } else {
+            alert('Failed to mark order as paid');
+          }
+        })
+        .catch(err => {
+          alert('Error updating order status');
+          console.error(err);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
